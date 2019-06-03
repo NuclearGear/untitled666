@@ -6,6 +6,12 @@ from lxml import etree
 def toStrStrip(params):
     return str(params).strip()
 
+def product_name(html_selector):
+    for i in html_selector.xpath("//dl[@class='detail']/dd/table/tr"):
+        if i.attrib != "":
+            print(i.xpath(".//span/text()")[0])
+
+
 def table_detail(order_item_names):
     tr_list = order_item_names.xpath("//tr/@class")
     # print(type(tr_list))
@@ -44,12 +50,12 @@ for i in range(1,28):
             order_post_time = html_selector.xpath("//ul[@class='clearfix']/li[6]/span[2]/text()")[0]
             order_post_price = html_selector.xpath("//ul[@class='clearfix']/li[7]/span[2]/text()")[0]
             # order_domestic = html_selector.xpath("//ul[@class='clearfix']/li[8]/span[2]/text()")[0]
-            order_item_names = html_selector.xpath("//dl[@class='detail']/dd/table")[0]
+            order_item_names = product_name(html_selector)
             order_total_cost = html_selector.xpath("//*[@id='detail']/dl[5]/dd/ul/li[4]/span[2]/text()")[0]
             print(
                 toStrStrip(order_post_time).split(" ")[0],"\t",#2019-05-30
-                table_detail(order_item_names),"\t",#SZ13 homage 1 eb 5.7
-                toStrStrip(order_tracking), "\t",#9405509699937508438694
+                order_item_names,"\t",#SZ13 homage 1 eb 5.7
+                toStrStrip(order_tracking), "\t",#94055096999375084386gitgggggg94
                 toStrStrip(order_status), "\t",#待出库
                 toStrStrip(order_domestic), "\t",# 9737401138397(青岛邮政包裹)
                 toStrStrip(orderID),"\t",#DD190528281703
@@ -59,7 +65,7 @@ for i in range(1,28):
                 toStrStrip(order_service_lines)#关税补贴模式-鞋服关税补贴专线
             )
         else:
-            print("","",all_text_dict['ResultList'][i]['OrderNo'])
+            print("","\t","","\t",all_text_dict['ResultList'][i]['OrderNo'])
 
 
 
