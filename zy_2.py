@@ -3,8 +3,8 @@ import time
 import json
 from lxml import etree
 
-def toStrStrip(str):
-    return str(str).strip()
+def toStrStrip(param):
+    return str(param).strip()
 
 def getHtml(url):
 
@@ -22,7 +22,6 @@ def table_detail(order_item_names):
     # print(type(tr_list))
     if tr_list != None:
         for i in range(len(tr_list)):
-            # for j in range(len(tr_list.xpath("/td[3]/@title")[0])):
             print(tr_list[i])
 
 for i in range(1,29):
@@ -38,10 +37,10 @@ for i in range(1,29):
     all_text_dict = json.loads(session.get(url=all_url,headers=headers).text)
 
     for i in range(0,len(all_text_dict['ResultList'])):
-        # print(all_text_dict['ResultList'][i]['OrderNo'])
         zy_orderCreateTime = all_text_dict['ResultList'][i]['CreateTime']
         if all_text_dict['ResultList'][i]['OrderNo'].startswith('DD'):
             order_detail_url = "http://member.transrush.com/Member/parcelDetail.aspx?fromTab=sy&orderNo="+all_text_dict['ResultList'][i]['OrderNo']
+            # order_detail_url = "http://member.transrush.com/Member/parcelDetail.aspx?fromTab=dqs&orderNo=DD190214608236"
             order_detail_html = session.get(url=order_detail_url, headers=headers).text
             html_selector = etree.HTML(order_detail_html)
 
@@ -57,39 +56,59 @@ for i in range(1,29):
             order_post_time = html_selector.xpath("//ul[@class='clearfix']/li[6]/span[2]/text()")[0]
             order_total_cost = html_selector.xpath("//*[@id='detail']/dl[5]/dd/ul/li[4]/span[2]/text()")[0]
 
-            if len(product_count) > 2:
-                for j in product_count:
-                    if j.attrib != "":
-                        order_item_names = j.xpath(".//span/text()")[0]
-
-                        print(
-                            zy_orderCreateTime,"\t",#2019-05-30
-                            order_item_names,"\t",#SZ13 homage 1 eb 5.7
-                            toStrStrip(order_tracking), "\t",#94055096999375084386gitgggggg94
-                            toStrStrip(order_status), "\t",#待出库
-                            toStrStrip(order_domestic), "\t",# 9737401138397(青岛邮政包裹)
-                            toStrStrip(orderID),"\t",#DD190528281703
-                            toStrStrip(order_total_cost),"\t",#￥134.00
-                            order_address[order_address.find("市")+1:order_address.find("市")+4],"\t",#东城区
-                            toStrStrip(order_transfer_depot),"\t",#美国波特兰（免税仓）
-                            toStrStrip(order_service_lines),"\t",#关税补贴模式-鞋服关税补贴专线
-                            toStrStrip(order_post_time).split(" ")[0]
-                        )
-            else:
-                product_name = html_selector.xpath("//dl[@class='detail']/dd/table/tr[2]/td[3]/@title")[0]
-                print(
-                    zy_orderCreateTime, "\t",  # 2019-05-30
-                    product_name, "\t",  # SZ13 homage 1 eb 5.7
-                    toStrStrip(order_tracking), "\t",  # 94055096999375084386gitgggggg94
-                    toStrStrip(order_status), "\t",  # 待出库
-                    toStrStrip(order_domestic), "\t",  # 9737401138397(青岛邮政包裹)
-                    toStrStrip(orderID), "\t",  # DD190528281703
-                    toStrStrip(order_total_cost), "\t",  # ￥134.00
-                    order_address[order_address.find("市") + 1:order_address.find("市") + 4], "\t",  # 东城区
-                    toStrStrip(order_transfer_depot), "\t",  # 美国波特兰（免税仓）
-                    toStrStrip(order_service_lines), "\t",  # 关税补贴模式-鞋服关税补贴专线
-                    toStrStrip(order_post_time).split(" ")[0]
-                )
+            for i in html_selector.xpath("//dl[@class='detail']/dd/table/tr"):
+                if i.attrib != "":
+                    # 判断tr/td[1] rowspan属性
+                    if len(i.xpath("./td[1][@rowspan]")):
+                        # print(i.xpath("./td[1]/@title"Ωn)[0],i.xpath(".//span/text()")[0])
+                        rowspan = i.xpath("./td[1]/@rowspan")[0]
+                        if int(rowspan) > 1:
+                            print(
+                                zy_orderCreateTime, "\t",# 2019-05-30
+                                toStrStrip(str(i.xpath('./td[3]/@title')[0])),"\t",#SZ13 homage 1 eb 5.7
+                                toStrStrip(order_tracking), "\t",#94055096999375084386gitgggggg94
+                                toStrStrip(order_status), "\t",#待出库
+                                toStrStrip(order_domestic), "\t",# 9737401138397(青岛邮政包裹)
+                                toStrStrip(orderID),"\t",#DD190528281703
+                                toStrStrip(order_total_cost),"\t",#￥134.00
+                                order_address[order_address.find("市")+1:order_address.find("市")+4],"\t",#东城区
+                                toStrStrip(order_transfer_depot),"\t",#美国波特兰（免税仓）
+                                toStrStrip(order_service_lines),"\t",#关税补贴模式-鞋服关税补贴专线
+                                toStrStrip(order_post_time).split(" ")[0]
+                            )
+                            # 获取第三个a标签后面的第N个标签："//a[@id='3']/following-sibling::*[N]"
+                            for j in range(2, int(rowspan) + 1):
+                                xpath_express = "./following-sibling::tr[" + str(j - 1) + "]"
+                                row_conten = i.xpath(xpath_express)
+                                for k in row_conten:
+                                    # print(etree.tostring(k))
+                                    print(
+                                        zy_orderCreateTime,"\t",# 2019-05-30
+                                        toStrStrip(str(k.xpath('./td[2]/@title')[0])),"\t",# SZ13 homage 1 eb 5.7
+                                        toStrStrip(order_tracking),"\t",# 94055096999375084386gitgggggg94
+                                        toStrStrip(order_status),"\t",# 待出库
+                                        toStrStrip(order_domestic),"\t",# 9737401138397(青岛邮政包裹)
+                                        toStrStrip(orderID),"\t",# DD190528281703
+                                        toStrStrip(order_total_cost),"\t",# ￥134.00
+                                        order_address[order_address.find("市") + 1:order_address.find("市") + 4],"\t",# 东城区
+                                        toStrStrip(order_transfer_depot),"\t",# 美国波特兰（免税仓）
+                                        toStrStrip(order_service_lines),"\t",# 关税补贴模式-鞋服关税补贴专线
+                                        toStrStrip(order_post_time).split(" ")[0]
+                                    )
+                        else:
+                            print(
+                                zy_orderCreateTime,"\t",# 2019-05-30
+                                toStrStrip(str(i.xpath('./td[3]/@title')[0])),"\t",# SZ13 homage 1 eb 5.7
+                                toStrStrip(str(i.xpath('./td[1]/@title')[0])),"\t",# 94055096999375084386gitgggggg94
+                                toStrStrip(order_status),"\t",# 待出库
+                                toStrStrip(order_domestic),"\t",# 9737401138397(青岛邮政包裹)
+                                toStrStrip(orderID),"\t",# DD190528281703
+                                toStrStrip(order_total_cost),"\t",# ￥134.00
+                                order_address[order_address.find("市") + 1:order_address.find("市") + 4],"\t",# 东城区
+                                toStrStrip(order_transfer_depot),"\t",# 美国波特兰（免税仓）
+                                toStrStrip(order_service_lines),"\t",# 关税补贴模式-鞋服关税补贴专线
+                                toStrStrip(order_post_time).split(" ")[0]
+                            )
         else:
             print("","\t","","\t",all_text_dict['ResultList'][i]['OrderNo'])
 
