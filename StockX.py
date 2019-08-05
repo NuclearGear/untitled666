@@ -1,34 +1,71 @@
 import requests
 import json
 from datetime import datetime, timedelta
+import pymysql
 
 headers = {
-        "Cookie":"__cfduid=ddfd3209f8e42948f03a52cd304c424991550723127; cto_lwid=25cd3e97-7c94-4cff-8fb2-1d30ad3ad258; _ga=GA1.2.1759953033.1550723137; _tl_duuid=5f9c40ac-6d2b-49c3-a448-f01b2190a466; tracker_device=e4118d71-7107-4ca1-b16d-8dcf4e268e10; ajs_group_id=null; ajs_anonymous_id=%2227ad7ea2-541a-41ef-816c-0af6df7b257a%22; rskxRunCookie=0; rCookie=czq7h78uwfd1c37algwvsc; ajs_user_id=%2280b2a851-2e02-11e9-8db9-12deb909e97c%22; _fbp=fb.1.1550798376047.1194747652; _scid=e4fdca92-2185-4e7a-9a68-5da24ac176f9; _pxvid=dd45f8a1-567a-11e9-800f-6358157ff7d7; intercom-id-h1d8fvw9=a696bbed-4e73-4511-8230-1794021e32b8; IR_gbd=stockx.com; _pxhd=fe8225b5fe6d82142c2db0ee01d485c5ad6cb40701a3c802d04f2d061ca861f5:dd45f8a1-567a-11e9-800f-6358157ff7d7; _tl_uid=80b2a851-2e02-11e9-8db9-12deb909e97c; stockx_multi_edit_seen=true; _gcl_au=1.1.1645975475.1558564281; stockx_seen_bid_new_info=true; stockx_seen_ask_new_info=true; show_bid_ask_spread=false; show_below_retail=true; stockx_default_sneakers_size=11; stockx_product_visits=17; stockx_homepage=sneakers; lastRskxRun=1559475559020; intercom-session-h1d8fvw9=cG8wd0NqenRaY3p2eERWbXh1Q25tdlN2ZzZFaDFwNDFxakl2VmsrNW1rRGpBYWFrV1MrYWJCSjZYWDd1Nzg3Ui0td09sUWpleE0rejlscHBJMllaM0NTZz09--fa0963b6e4769dc12ff40620e8284a126919e2ec; _gid=GA1.2.1318498363.1559795729; _sp_ses.1a3e=*; _tl_csid=581c0700-ddef-4fe6-b61a-25dffe4913fa; _pk_ref.421.1a3e=%5B%22%22%2C%22%22%2C1559795732%2C%22https%3A%2F%2Fhelp.stockx.com%2Fcontacting-support%2Fhow-do-i-contact-customer-service%22%5D; _pk_id.421.1a3e=5f7b717bb6731bf0.1557793210.22.1559795732.1559795731.; _pk_ses.421.1a3e=*; _sp_id.1a3e=bb58aec7-cccd-4c8e-8a83-adc867c7eb34.1557842726.49.1559795732.1559476349.4e12d912-3338-40e3-88c1-c618fd7d636c; tl_sopts_581c0700-ddef-4fe6-b61a-25dffe4913fa_p_p_n=JTJGYnV5aW5n; tl_sopts_581c0700-ddef-4fe6-b61a-25dffe4913fa_p_p_l_h=aHR0cHMlM0ElMkYlMkZzdG9ja3guY29tJTJGYnV5aW5n; tl_sopts_581c0700-ddef-4fe6-b61a-25dffe4913fa_p_p_l_t=U3RvY2tYJTNBJTIwQnV5JTIwYW5kJTIwU2VsbCUyMFNuZWFrZXJzJTJDJTIwU3RyZWV0d2VhciUyQyUyMEhhbmRiYWdzJTJDJTIwV2F0Y2hlcw==; tl_sopts_581c0700-ddef-4fe6-b61a-25dffe4913fa_p_p_l=JTdCJTIyaHJlZiUyMiUzQSUyMmh0dHBzJTNBJTJGJTJGc3RvY2t4LmNvbSUyRmJ1eWluZyUyMiUyQyUyMmhhc2glMjIlM0ElMjIlMjIlMkMlMjJzZWFyY2glMjIlM0ElMjIlMjIlMkMlMjJob3N0JTIyJTNBJTIyc3RvY2t4LmNvbSUyMiUyQyUyMnByb3RvY29sJTIyJTNBJTIyaHR0cHMlM0ElMjIlMkMlMjJwYXRobmFtZSUyMiUzQSUyMiUyRmJ1eWluZyUyMiUyQyUyMnRpdGxlJTIyJTNBJTIyU3RvY2tYJTNBJTIwQnV5JTIwYW5kJTIwU2VsbCUyMFNuZWFrZXJzJTJDJTIwU3RyZWV0d2VhciUyQyUyMEhhbmRiYWdzJTJDJTIwV2F0Y2hlcyUyMiU3RA==; tl_sopts_581c0700-ddef-4fe6-b61a-25dffe4913fa_p_p_v_d=MjAxOS0wNi0wNlQwNCUzQTM1JTNBMzEuODg4Wg==; is_gdpr=false; cookie_policy_accepted=true; stockx_selected_currency=USD; stockx_selected_locale=en_US; _gat=1; stockx_user_logged_in=true; token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdG9ja3guY29tIiwic3ViIjoic3RvY2t4LmNvbSIsImF1ZCI6IndlYiIsImFwcF9uYW1lIjoiSXJvbiIsImFwcF92ZXJzaW9uIjoiMi4wLjAiLCJpc3N1ZWRfYXQiOiIyMDE5LTA2LTA2IDA0OjM1OjMyIiwiY3VzdG9tZXJfaWQiOiI1MzUwMzc5IiwiZW1haWwiOiI2NDU3NDg3MTJAcXEuY29tIiwiY3VzdG9tZXJfdXVpZCI6IjgwYjJhODUxLTJlMDItMTFlOS04ZGI5LTEyZGViOTA5ZTk3YyIsImZpcnN0TmFtZSI6InN1biIsImxhc3ROYW1lIjoibGVpIiwiZ2Rwcl9zdGF0dXMiOiJBQ0NFUFRFRCIsImRlZmF1bHRfY3VycmVuY3kiOiJVU0QiLCJsYW5ndWFnZSI6ImVuLVVTIiwic2hpcF9ieV9kYXRlIjpudWxsLCJ2YWNhdGlvbl9kYXRlIjpudWxsLCJwcm9kdWN0X2NhdGVnb3J5Ijoic3RyZWV0d2VhciIsImlzX2FkbWluIjoiMCIsInNlc3Npb25faWQiOiIxMzA3MzE4NDQxMTg2NDIwMTUzNiIsImV4cCI6MTU2MDQwMDUzMiwiYXBpX2tleXMiOltdfQ.vvBp-hI0Lfn68KmRs4aSJEyZXNrZcegzdpnkOvowS9Q; IR_9060=1559795732662%7C0%7C1559795732662%7C%7C; IR_PI=6ec2deb3-78b1-11e9-9fc0-42010a246302%7C1559882132662; _tl_auid=5c617a93825e5a00141fc211; _tl_sid=5cf8981559eb3e0019bd4925; _pxff_tm=1; show_all_as_number=false; brand_tiles_version=v1; show_bid_education=%20; show_bid_education_times=1; mobile_nav_v2=true; multi_edit_option=decrease; product_page_v2=watches%2Chandbags; show_watch_modal=true; stockx_bid_ask_spread_seen=true",
+        "Cookie":"__cfduid=dfd76c45e1883c7d42b80a201bac831b51561868162; _ga=GA1.2.1832067962.1561868165; _gcl_au=1.1.128188731.1561868166; _tl_duuid=f1f870cd-8e23-4477-8acb-64da02de2dbc; ajs_group_id=null; ajs_anonymous_id=%22e9f04751-f2d9-487c-9337-6dfd15d7adf6%22; cto_lwid=dd71613a-3c2b-49e3-982b-453bd620e5c9; tracker_device=81c60c70-477f-4fa8-b415-c8771605b625; ajs_user_id=%2280b2a851-2e02-11e9-8db9-12deb909e97c%22; _fbp=fb.1.1561868169481.1792539972; rskxRunCookie=0; rCookie=cjdyo4h4x4qdbqgoh1xx4; _scid=7927340b-f078-46c1-ae8a-fcca8e5eb5c6; _pxhd=f4f1b1adb700c1c29570b3bd25d6e32d99538142d4a26d434db7b65a80f69b2a:f2ea3270-b08e-11e9-b75c-4d5e1258ff9a; _ALGOLIA=anonymous-6b13d3b1-3f0a-4a78-9eaa-06095f13109b; stockx_session=137x8jylrw9kd1564246361965; stockx_multi_edit_seen=true; IR_gbd=stockx.com; _tl_uid=80b2a851-2e02-11e9-8db9-12deb909e97c; stockx_seen_bid_new_info=true; stockx_product_visits=7; stockx_default_sneakers_size=All; stockx_homepage=sneakers; is_gdpr=false; stockx_selected_currency=USD; stockx_selected_locale=en_US; show_all_as_number=false; brand_tiles_version=v1; show_bid_education=%20; show_bid_education_times=1; multi_edit_option=decrease; product_page_v2=watches%2Chandbags; show_watch_modal=true; _derived_epik=dj0yJnU9M0tnOTU0eXpOb3loeUoxUG1uU2twdXl5MC1LTVJ5QmQmbj1jSTR1clJibGM3eWlKMC1KNk9JYzB3Jm09NyZ0PUFBQUFBRjFFYkZJ; stockx_user_logged_in=true; cookie_policy_accepted=true; token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdG9ja3guY29tIiwic3ViIjoic3RvY2t4LmNvbSIsImF1ZCI6IndlYiIsImFwcF9uYW1lIjoiSXJvbiIsImFwcF92ZXJzaW9uIjoiMi4wLjAiLCJpc3N1ZWRfYXQiOiIyMDE5LTA4LTAyIDE3OjA1OjQ1IiwiY3VzdG9tZXJfaWQiOiI1MzUwMzc5IiwiZW1haWwiOiI2NDU3NDg3MTJAcXEuY29tIiwiY3VzdG9tZXJfdXVpZCI6IjgwYjJhODUxLTJlMDItMTFlOS04ZGI5LTEyZGViOTA5ZTk3YyIsImZpcnN0TmFtZSI6InN1biIsImxhc3ROYW1lIjoibGVpIiwiZ2Rwcl9zdGF0dXMiOiJBQ0NFUFRFRCIsImRlZmF1bHRfY3VycmVuY3kiOiJVU0QiLCJsYW5ndWFnZSI6ImVuLVVTIiwic2hpcF9ieV9kYXRlIjpudWxsLCJ2YWNhdGlvbl9kYXRlIjpudWxsLCJwcm9kdWN0X2NhdGVnb3J5Ijoic25lYWtlcnMiLCJpc19hZG1pbiI6IjAiLCJzZXNzaW9uX2lkIjoiMTMxMjIyMTU1MzE0Mzc2MjI2MzEiLCJleHAiOjE1NjUzNzAzNDUsImFwaV9rZXlzIjpbXX0.af-2Iu0Qj12s-sZ9K1L824lV4vtLqveDcoTZGkdMycE; stockx_learn_more_dismiss=true; lastRskxRun=1564901573932; _pk_ref.421.1a3e=%5B%22%22%2C%22%22%2C1564901574%2C%22https%3A%2F%2Fmail.qq.com%2F%22%5D; IR_9060=1564765820473%7C0%7C1564765263562%7C%7C; IR_PI=c8d7e781-9aed-11e9-9801-42010a246302%7C1564852220473; intercom-session-h1d8fvw9=WmhHdlRUSHJGRUt4ZWd5UjBzZFhIZTMzVHRjYWduSHBWNlkrQmd1YVhlVjl1cXNmMG5lV0lCUGppQnQ1eHE2ay0tc0JjSjQvZWN6eWt0YmFPTkt6TjVxUT09--fda681775ae6d42c5f6d69a7770142f448a8aed1; _gid=GA1.2.744610889.1564918547; _sp_ses.1a3e=*; _pk_id.421.1a3e=d0719d65cdc23658.1561868168.36.1564918549.1564765819.; _sp_id.1a3e=89c8d259-3644-4e22-9add-b59197aef96c.1561868166.69.1564918550.1564901698.2cca91f7-11fb-4ebc-8156-bb9a0397d78e; stockx_bid_ask_spread_seen=true",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.1 Safari/605.1.15",
         "Referer": "https://stockx.com/buying",
-        "JWT-Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdG9ja3guY29tIiwic3ViIjoic3RvY2t4LmNvbSIsImF1ZCI6IndlYiIsImFwcF9uYW1lIjoiSXJvbiIsImFwcF92ZXJzaW9uIjoiMi4wLjAiLCJpc3N1ZWRfYXQiOiIyMDE5LTA2LTA2IDA0OjM1OjMyIiwiY3VzdG9tZXJfaWQiOiI1MzUwMzc5IiwiZW1haWwiOiI2NDU3NDg3MTJAcXEuY29tIiwiY3VzdG9tZXJfdXVpZCI6IjgwYjJhODUxLTJlMDItMTFlOS04ZGI5LTEyZGViOTA5ZTk3YyIsImZpcnN0TmFtZSI6InN1biIsImxhc3ROYW1lIjoibGVpIiwiZ2Rwcl9zdGF0dXMiOiJBQ0NFUFRFRCIsImRlZmF1bHRfY3VycmVuY3kiOiJVU0QiLCJsYW5ndWFnZSI6ImVuLVVTIiwic2hpcF9ieV9kYXRlIjpudWxsLCJ2YWNhdGlvbl9kYXRlIjpudWxsLCJwcm9kdWN0X2NhdGVnb3J5Ijoic3RyZWV0d2VhciIsImlzX2FkbWluIjoiMCIsInNlc3Npb25faWQiOiIxMzA3MzE4NDQxMTg2NDIwMTUzNiIsImV4cCI6MTU2MDQwMDUzMiwiYXBpX2tleXMiOltdfQ.vvBp-hI0Lfn68KmRs4aSJEyZXNrZcegzdpnkOvowS9Q",
+        "JWT-Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdG9ja3guY29tIiwic3ViIjoic3RvY2t4LmNvbSIsImF1ZCI6IndlYiIsImFwcF9uYW1lIjoiSXJvbiIsImFwcF92ZXJzaW9uIjoiMi4wLjAiLCJpc3N1ZWRfYXQiOiIyMDE5LTA4LTAyIDE3OjA1OjQ1IiwiY3VzdG9tZXJfaWQiOiI1MzUwMzc5IiwiZW1haWwiOiI2NDU3NDg3MTJAcXEuY29tIiwiY3VzdG9tZXJfdXVpZCI6IjgwYjJhODUxLTJlMDItMTFlOS04ZGI5LTEyZGViOTA5ZTk3YyIsImZpcnN0TmFtZSI6InN1biIsImxhc3ROYW1lIjoibGVpIiwiZ2Rwcl9zdGF0dXMiOiJBQ0NFUFRFRCIsImRlZmF1bHRfY3VycmVuY3kiOiJVU0QiLCJsYW5ndWFnZSI6ImVuLVVTIiwic2hpcF9ieV9kYXRlIjpudWxsLCJ2YWNhdGlvbl9kYXRlIjpudWxsLCJwcm9kdWN0X2NhdGVnb3J5Ijoic25lYWtlcnMiLCJpc19hZG1pbiI6IjAiLCJzZXNzaW9uX2lkIjoiMTMxMjIyMTU1MzE0Mzc2MjI2MzEiLCJleHAiOjE1NjUzNzAzNDUsImFwaV9rZXlzIjpbXX0.af-2Iu0Qj12s-sZ9K1L824lV4vtLqveDcoTZGkdMycE",
     }
 
 requests.packages.urllib3.disable_warnings()
 session = requests.session()
 
-for i in range(1, 10):
-    history_url = "https://stockx.com/api/customers/5350379/buying/history?sort=matched_with_date&order=DESC&limit=20&page="+str(i)+"&currency=USD"
-    his_json = json.loads(session.get(url=history_url, headers=headers,verify=False).text)
+def conn_db():
+    conn = pymysql.connect(
+        host='localhost',
+        user='root',
+        passwd='12345678',
+        db='shoes',
+        charset='utf8'
+    )
+    cur = conn.cursor()
+    return conn,cur
 
-    for i in range(len(his_json['PortfolioItems'])):
-        content_dict = his_json['PortfolioItems'][i]
+def conn_close(conn,cur):
+    cur.close()
+    conn.close()
 
-        time_1 = content_dict['matchedWithDate'].replace("+00:00", ".000Z")
-        data_1 = datetime.strptime(time_1, '%Y-%m-%dT%H:%M:%S.%fZ')
-        purchase_time = data_1 + timedelta(hours=8)
-        purchase_time = purchase_time.strftime("%Y-%m-%d")
+def conn_commit(cur):
+    cur.connection.commit()
 
-        print(
-            content_dict['orderNumber'],"\t",
-            content_dict['product']['title'],"\t",
-            content_dict['product']['styleId'],"\t",
-            content_dict['product']['shoeSize'],"\t",
-            content_dict['localTotal'],"\t",
-            purchase_time,"\t",
-            content_dict['Tracking']['number'])
+def go():
+    for i in range(1, 18):
+        history_url = "https://stockx.com/api/customers/5350379/buying/history?sort=matched_with_date&order=DESC&limit=20&page="+str(i)+"&currency=USD"
+        his_json = json.loads(session.get(url=history_url, headers=headers,verify=False).text)
+
+        for i in range(len(his_json['PortfolioItems'])):
+            content_dict = his_json['PortfolioItems'][i]
+
+            time_1 = content_dict['matchedWithDate'].replace("+00:00", ".000Z")
+            data_1 = datetime.strptime(time_1, '%Y-%m-%dT%H:%M:%S.%fZ')
+            purchase_time = data_1 + timedelta(hours=8)
+            purchase_time = purchase_time.strftime("%Y-%m-%d")
+
+            orderNumber = content_dict['orderNumber'].strip()
+            shoesName = content_dict['product']['title'].strip()
+            styleId = content_dict['product']['styleId'].strip()
+            shoeSize = content_dict['product']['shoeSize']
+            amount = content_dict['localTotal']
+            purchaseDate = purchase_time
+            trackingNo = content_dict['Tracking']['number'].strip()
+
+            print(
+                orderNumber,"\t",
+                shoesName,"\t",
+                styleId,"\t",
+                shoeSize,"\t",
+                amount,"\t",
+                purchaseDate,"\t",
+                trackingNo)
+
+            sql = "insert into stockx_purchased(orderNumber,shoesName,styleId,shoeSize,amount,purchaseDate,trackingNo) VALUES ('%s','%s','%s','%s','%s','%s','%s')" %(orderNumber,shoesName,styleId,shoeSize,amount,purchaseDate,trackingNo)
+            cur.execute(sql)
+
+
+conn,cur = conn_db()
+go()
+conn_commit(cur)
+conn_close(conn, cur)
